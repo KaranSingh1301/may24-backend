@@ -15,6 +15,7 @@ const todoModel = require("./models/todoModel");
 //contants
 const app = express();
 const PORT = process.env.PORT || 8000;
+const Schema = mongoose.Schema;
 const store = new mongodbSession({
   uri: process.env.MONGO_URI,
   collection: "sessions",
@@ -169,6 +170,35 @@ app.post("/logout", isAuth, (req, res) => {
     if (err) return res.status(500).json(err);
     return res.redirect("/login");
   });
+});
+
+//logout from all devices
+
+app.post("/logout-from-all-device", isAuth, async (req, res) => {
+  console.log(req.session);
+
+  const username = req.session.user.username;
+
+  const sessionSchema = new Schema({ _id: String }, { strict: false });
+  const sessionModel = mongoose.model("session", sessionSchema);
+
+  try {
+    const deleteDb = await sessionModel.deleteMany({
+      "session.user.username": username,
+    });
+    console.log(deleteDb);
+
+    return res.send({
+      status: 200,
+      message: `Logout from ${deleteDb.deletedCount} devices sucessfully`,
+    });
+  } catch (error) {
+    return res.send({
+      status: 500,
+      message: "Internal server error",
+      error: error,
+    });
+  }
 });
 
 //todos api's
